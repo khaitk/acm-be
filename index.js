@@ -1,33 +1,22 @@
-const amqp = require("amqplib");
+const express = require("express");
+let router = require ("./routers/product.route");
+const mongoose = require("mongoose");
 
-const queue = "product_inventory";
+mongoose.connect("", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  })
+  .then(() => console.log("Product-Service Connected to MongoDB"))
+  .catch((e) => console.log(e));
 
-(async () => {
-  try {
-    const connection = await amqp.connect("amqp://localhost");
-    const channel = await connection.createChannel();
+const app = express();
 
-    process.once("SIGINT", async () => {
-      await channel.close();
-      await connection.close();
-    });
+app.use(express.json());
 
-    await channel.assertQueue(queue, { durable: false });
-    await channel.consume(
-      queue,
-      (message) => {
-        if (message) {
-          console.log(
-            " [x] Received '%s'",
-            JSON.parse(message.content.toString())
-          );
-        }
-      },
-      { noAck: true }
-    );
+app.get("/", (req, res) => {
+  res.json({ message: "Welcome to bezkoder application." });
+});
 
-    console.log(" [*] Waiting for messages. To exit press CTRL+C");
-  } catch (err) {
-    console.warn(err);
-  }
-})();
+require('./routers/product.route')(app);
+
+app.listen(3001, ()=> console.log('Server running at port 3001'));
